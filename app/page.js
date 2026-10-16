@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-// 안성 1150번 버스 전체 정류장 및 실시간 안내 데이터베이스
+// 안성 1150번 버스 전체 노선 및 상세 정류장 데이터
 const route1150Stops = [
   { id: "1", name: "안성종합버스터미널", type: "기점", info: "첫차 05:00 / 막차 22:30 | 안성 시외/시내버스 중심 기점" },
   { id: "2", name: "한경국립대학교", type: "주요정류장", info: "대학생 및 인근 주민 주요 승하차 구역" },
@@ -18,7 +18,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [selectedStop, setSelectedStop] = useState(null);
 
-  // 똑똑한 자체 로직으로 실시간 AI 안내 시뮬레이션
+  // 맞춤형 대중교통 길찾기 가이드 로직
   const handleAsk = () => {
     if (!question.trim()) return;
 
@@ -30,20 +30,20 @@ export default function Home() {
       let responseText = "";
 
       if (q.includes("시간") || q.includes("얼마나") || q.includes("소요")) {
-        responseText = `🚌 [1150번 버스 소요 시간 안내]\n• 안성종합버스터미널에서 평택역 종점까지 전체 소요 시간은 대략 **35분 ~ 45분** 소요됩니다.\n• 단, 출퇴근 시간대나 공도·진사리 구간 정체 시 10~15분 정도 더 걸릴 수 있습니다.`;
+        responseText = `🚌 [1150번 버스 소요 시간 안내]\n• 안성종합버스터미널에서 평택역 종점까지 전체 소요 시간은 대략 **35분 ~ 45분** 소요됩니다.\n• 단, 출퇴근 시간대나 공도·진사리 구간 정체 시 10~15분 정도 더 걸릴 수 있으니 여유를 가지고 탑승하세요!`;
       } else if (q.includes("배차") || q.includes("간격")) {
-        responseText = `⏱️ [1150번 버스 배차 간격 안내]\n• 평일/주말 평균 **15분 ~ 20분** 간격으로 운행됩니다.\n• 실시간 버스 앱(카카오맵/네이버지도)을 통해 현재 버스 위치를 확인하고 나오시는 것을 추천합니다!`;
+        responseText = `⏱️ [1150번 버스 배차 간격 안내]\n• 평일/주말 평균 **15분 ~ 20분** 간격으로 운행됩니다.\n• 실시간 버스 앱(카카오맵/네이버지도)을 통해 현재 버스 위치를 확인하고 대기하시는 것을 추천합니다.`;
       } else if (q.includes("한경대") || q.includes("중앙대")) {
         responseText = `🏫 [대학가 연계 안내]\n• 한경국립대와 중앙대 안성캠퍼스 모두 1150번 핵심 정류장에 포함되어 있어 평택역까지 환승 없이 한 번에 이동 가능합니다.`;
       } else if (q.includes("평택역") || q.includes("종점")) {
         responseText = `🚉 [평택역 연계 안내]\n• 1150번의 종점인 평택역에서 하차하시면 **지하철 1호선** 및 평택 시내 상권으로 곧바로 환승하실 수 있습니다.`;
       } else {
-        responseText = `🤖 [안성 1150번 대중교통 가이드 답변]\n• 질문하신 내용("${question}")과 관련하여, 1150번 노선은 안성터미널을 출발해 한경대, 중앙대, 공도를 거쳐 평택역까지 운행하는 핵심 노선입니다. 정류장 버튼을 클릭하시면 각 위치별 상세 정보를 확인하실 수 있습니다!`;
+        responseText = `💡 [안성 1150번 대중교통 가이드 답변]\n• 질문하신 내용("${question}")과 관련하여, 1150번 노선은 안성터미널을 출발해 한경대, 중앙대, 공도를 거쳐 평택역까지 운행하는 핵심 노선입니다. 아래 정류장 목록을 클릭하시면 각 위치별 상세 정보를 확인하실 수 있습니다!`;
       }
 
       setAnswer(responseText);
       setLoading(false);
-    }, 500);
+    }, 400);
   };
 
   return (
