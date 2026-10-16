@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-// 기본 버스 및 정류장 정보 데이터
+// 안성 주요 대중교통 및 1150번 버스 데이터
 const busData = {
   stops: [
     { id: "1", name: "한경국립대" },
@@ -18,19 +18,56 @@ export default function Home() {
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleAsk = () => {
+  // ⚠️ 아래 빈 따옴표 안에 Google AI Studio에서 발급받은 본인의 API 키를 통째로 넣어주세요!
+  // 예: "AIzaSyD-..."
+  const GEMINI_API_KEY = "AQ.Ab8RN6KC0RnRgeM1gyOLm8YFk3R9l2Hp_KeCTnEMaDRAuqi8dA";
+
+  const handleAsk = async () => {
     if (!question.trim()) return;
-    setLoading(true);
     
-    // AI 질문 안내 예시 처리 (간단 시뮬레이션)
-    setTimeout(() => {
-      if (question.includes("한경대") && question.includes("평택역")) {
-        setAnswer("🚌 **한경대 → 평택역 추천 경로**\n\n1150번 버스를 타시면 직통으로 이동할 수 있습니다.\n• 예상 소요 시간: 약 35~40분\n• 배차 간격: 15~20분\n• 팁: 출퇴근 시간에는 중앙대 주변 차가 막힐 수 있으니 10분 여유 있게 탑승하세요!");
+    if (GEMINI_API_KEY === "AQ.Ab8RN6KC0RnRgeM1gyOLm8YFk3R9l2Hp_KeCTnEMaDRAuqi8dA" || !GEMINI_API_KEY) {
+      setAnswer("⚠️ 코드 상단의 GEMINI_API_KEY 변수에 본인의 실제 Google API 키를 입력해 주세요!");
+      return;
+    }
+
+    setLoading(true);
+    setAnswer("");
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: `당신은 안성 대중교통(특히 1150번 버스: 한경국립대 - 중앙대 안성캠퍼스 - 평택역 노선) 전문 AI 안내원입니다.\n` +
+                          `다음 사용자의 질문에 친절하고 상세하게 답변해주세요.\n` +
+                          `소요시간, 배차간격(1150번 기준 15~20분), 환승 및 이용 팁 등을 포함해서 답변해주세요.\n\n` +
+                          `질문: ${question}`
+                  }
+                ]
+              }
+            ]
+          })
+        }
+      );
+
+      const data = await res.json();
+      if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+        setAnswer(data.candidates[0].content.parts[0].text);
       } else {
-        setAnswer(`🔍 '${question}'에 대한 대중교통 안내:\n\n1150번 버스 노선(한경대 ↔ 중앙대 ↔ 평택역)을 이용하시거나, 목적지에 맞춰 가까운 버스 정류장을 확인해 주세요!`);
+        setAnswer("🤖 AI 답변을 불러오는 중 오류가 발생했습니다. API 키가 올바른지 확인해 주세요.");
       }
+    } catch (err) {
+      setAnswer(" 네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   return (
@@ -61,14 +98,15 @@ export default function Home() {
           type="text"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="예: 한경대에서 평택역 가는 법 알려줘"
+          placeholder="예: 중앙대에서 평택역까지 어떻게 가나요?"
           style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc", boxSizing: "border-box", marginBottom: "10px" }}
         />
         <button
           onClick={handleAsk}
-          style={{ width: "100%", padding: "12px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
+          disabled={loading}
+          style={{ width: "100%", padding: "12px", background: loading ? "#93c5fd" : "#2563eb", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
         >
-          {loading ? "AI 분석 중..." : "경로 및 정보 물어보기"}
+          {loading ? "AI 분석 중..." : "AI에게 물어보기"}
         </button>
 
         {/* AI 답변 결과 */}
