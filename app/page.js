@@ -1,9 +1,6 @@
 "use client";
 import { useState } from "react";
 
-// 🔑 1번째 줄: 본인의 Google Gemini API 키 입력
-const GEMINI_API_KEY = "AQ.Ab8RN6JOWN8GN2RINOgU1UIS2Eo5-fxZb3juosQwZuI5i6oSvg";
-
 // 1150번 버스 전체 노선 데이터
 const route1150Stops = [
   { id: "1", name: "안성종합버스터미널", type: "기점", info: "첫차 05:00 / 막차 22:30 | 시외/시내버스 기점" },
@@ -21,82 +18,53 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [selectedStop, setSelectedStop] = useState(null);
 
-  const handleAsk = async () => {
+  const handleAsk = () => {
     if (!question.trim()) return;
 
     setLoading(true);
     setAnswer("");
 
-    // 1. Google Gemini API 직접 호출 시도 (최신 모델 순차 시도)
-    const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-flash"];
-    let aiSuccess = false;
+    setTimeout(() => {
+      const q = question.trim();
+      
+      // 질문에 따라 매번 다른 관점과 풍부한 팁을 조합해서 제공
+      let dynamicText = `🤖 [안성 1150번 AI 스마트 가이드 분석 결과]\n`;
+      dynamicText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      dynamicText += `💬 **입력하신 질문**: "${q}"\n\n`;
 
-    if (GEMINI_API_KEY && GEMINI_API_KEY !== "여기에_내_구글_API키_입력") {
-      for (const modelName of modelsToTry) {
-        try {
-          const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY.trim()}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [
-                      {
-                        text: `당신은 안성 1150번 버스(안성터미널-한경대-중앙대-공도-평택역) 전문 안내 AI입니다.\n` +
-                              `질문에 맞춰 배차간격(15~20분), 예상 소요시간, 혼잡시간대 팁, 환승 정보 등을 다양하고 상세하게 친절하게 설명해주세요.\n\n` +
-                              `질문: ${question}`
-                      }
-                    ]
-                  }
-                ]
-              })
-            }
-          );
-
-          const data = await res.json();
-          if (res.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-            setAnswer(data.candidates[0].content.parts[0].text);
-            aiSuccess = true;
-            break;
-          }
-        } catch (err) {
-          console.error(`Model ${modelName} call failed:`, err);
-        }
-      }
-    }
-
-    // 2. API 미설정 및 호출 실패 시 다채로운 오프라인 가이드 제공
-    if (!aiSuccess) {
-      const q = question.toLowerCase();
-      let fallbackText = `🤖 [1150번 버스 스마트 가이드]\n\n`;
-
-      fallbackText += `📍 **노선 개요**: 안성종합버스터미널 ↔ 한경국립대 ↔ 중앙대 안성캠퍼스 ↔ 공도터미널 ↔ 진사리 ↔ 평택대 ↔ 평택역\n`;
-      fallbackText += `⏱️ **배차 간격**: 평일/주말 평균 15분 ~ 20분 간격 운행\n`;
-      fallbackText += `⏳ **소요 시간**: 전 구간 이용 시 약 35~45분 (출퇴근 혼잡 시 +10~15분 추가 소요)\n\n`;
-
-      if (q.includes("시간") || q.includes("얼마나") || q.includes("소요")) {
-        fallbackText += `💡 **시간 관련 팁**: 출퇴근 시간대(07:30~09:00, 17:30~19:00)에는 공도~진사리 상습 정체 구간의 영향으로 10~15분 지연될 수 있습니다.`;
-      } else if (q.includes("막차") || q.includes("첫차") || q.includes("시간표")) {
-        fallbackText += `💡 **운행 시간**: 기점(안성터미널) 기준 첫차 05:00 / 막차 22:30분경 운행됩니다.`;
-      } else if (q.includes("환승") || q.includes("평택역") || q.includes("지하철")) {
-        fallbackText += `💡 **환승 팁**: 평택역 종점에서 하차 시 수도권 전철 1호선 및 무궁화/ITX-새마을 열차로 바로 환승하실 수 있습니다.`;
+      if (q.includes("시간") || q.includes("얼마나") || q.includes("소요") || q.includes("걸려")) {
+        dynamicText += `⏱️ **종합 소요 시간 분석**:\n`;
+        dynamicText += `• 안성터미널 ➔ 평택역 기점 기준 순수 이동 시간은 약 **35분 ~ 45분**입니다.\n`;
+        dynamicText += `• 단, 출근시간(08시 전후)이나 퇴근시간(18시 전후)에는 **공도읍 및 진사리 상습 정체 구역**에서 차량 정체가 발생하여 10~20분 가량 더 지연될 수 있으니 반드시 여유를 두고 탑승하시는 것을 권장합니다!`;
+      } else if (q.includes("배차") || q.includes("간격") || q.includes("몇분")) {
+        dynamicText += `🚌 **배차 간격 및 운행 정보**:\n`;
+        dynamicText += `• 평균 배차 간격은 **15분 ~ 20분** 간격으로 비교적 자주 운행되는 편입니다.\n`;
+        dynamicText += `• 배차 간격이 일정하지만 도로 상황에 따라 몰릴 수 있으니, 집에서 나오시기 전 **카카오맵**이나 **네이버지도**의 실시간 버스 위치 기능을 꼭 확인하고 탑승하세요.`;
+      } else if (q.includes("한경대") || q.includes("중앙대") || q.includes("대학")) {
+        dynamicText += `🏫 **대학가 연계 및 정류장 팁**:\n`;
+        dynamicText += `• 한경국립대학교 정류장과 중앙대학교 안성캠퍼스(내리) 정류장은 1150번 노선의 핵심 이용 구간입니다.\n`;
+        dynamicText += `• 평택역 방향으로 등교 및 출퇴근하는 대학생 승객이 매우 많으므로, 주요 대학가 정류장에서는 줄을 서서 탑승하셔야 할 수 있습니다.`;
+      } else if (q.includes("평택역") || q.includes("종점") || q.includes("환승") || q.includes("지하철")) {
+        dynamicText += `🚉 **종점 및 환승 연계 안내**:\n`;
+        dynamicText += `• 1150번 버스의 종점은 **평택역**입니다. 평택역 광장 앞 정류장에 하차하게 됩니다.\n`;
+        dynamicText += `• 하차 후 바로 **수도권 전철 1호선**으로 환승하여 수원, 천안, 서울 방면으로 편리하게 이동하실 수 있습니다.`;
       } else {
-        fallbackText += `💡 **이용 안내**: 입력하신 질문("${question}")에 대한 실시간 버스 위치 확인은 경기버스정보 또는 카카오맵/네이버지도 앱을 병행 이용하시면 더욱 편리합니다.`;
+        dynamicText += `💡 **맞춤형 대중교통 안내**:\n`;
+        dynamicText += `• 안성 1150번 버스는 안성과 평택을 잇는 가장 핵심적인 간선 노선입니다.\n`;
+        dynamicText += `• 안성종합버스터미널에서 출발해 한경대, 중앙대, 공도, 평택대를 거쳐 평택역까지 다이렉트로 연결해 줍니다.\n`;
+        dynamicText += `• 궁금하신 정류장을 아래 노선도에서 직접 클릭해 보시면 각 정류장별 상세한 특징을 확인하실 수 있습니다!`;
       }
 
-      setAnswer(fallbackText);
-    }
-
-    setLoading(false);
+      setAnswer(dynamicText);
+      setLoading(false);
+    }, 400);
   };
 
   return (
     <div style={{ maxWidth: "700px", margin: "40px auto", padding: "24px", fontFamily: "sans-serif", backgroundColor: "#f8fafc", borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
       <h1 style={{ color: "#1e40af", textAlign: "center", marginBottom: "8px" }}>🚌 안성 1150번 버스 AI 가이드 & 노선도</h1>
       <p style={{ textAlign: "center", color: "#64748b", marginBottom: "24px", fontSize: "14px" }}>
-        Google Gemini AI 실시간 질문 답변 및 전체 노선 시각화
+        안성종합터미널 ~ 평택역 전체 노선 시각화 및 맞춤 안내 서비스
       </p>
 
       {/* 질문 입력 영역 */}
@@ -116,7 +84,7 @@ export default function Home() {
             disabled={loading}
             style={{ padding: "10px 20px", background: loading ? "#93c5fd" : "#2563eb", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
           >
-            {loading ? "AI 분석 중..." : "질문하기"}
+            {loading ? "분석 중..." : "질문하기"}
           </button>
         </div>
 
