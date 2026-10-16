@@ -1,7 +1,8 @@
+
 "use client";
 import { useState } from "react";
 
-// 🔑 1번째 줄: 쌍따옴표("") 안에 본인의 구글 API 키를 넣으세요!
+// 🔑 1번째 줄: 본인의 구글 API 키
 const GEMINI_API_KEY = "AQ.Ab8RN6KC0RnRgeM1gyOLm8YFk3R9l2Hp_KeCTnEMaDRAuqi8dA";
 
 const route1150Stops = [
@@ -18,7 +19,6 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
-  const [selectedStop, setSelectedStop] = useState(null);
 
   const handleAsk = async () => {
     if (!question.trim()) return;
@@ -32,15 +32,15 @@ export default function Home() {
     setAnswer("");
 
     try {
+      // gemini-1.5-flash 지원 모델 호출
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY.trim()}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [
               {
-                role: "user",
                 parts: [
                   {
                     text: `당신은 안성 대중교통(특히 1150번 버스: 안성터미널 - 한경대 - 중앙대 - 평택역 노선) 전문 AI 안내원입니다.\n` +
@@ -55,13 +55,16 @@ export default function Home() {
       );
 
       const data = await res.json();
-      if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+
+      if (res.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
         setAnswer(data.candidates[0].content.parts[0].text);
       } else {
-        setAnswer("🤖 AI 응답을 불러오지 못했습니다. API 키가 올바른지 확인해 주세요.");
+        // 구글 응답 에러를 원문 그대로 출력
+        const errorMsg = data.error?.message || JSON.stringify(data);
+        setAnswer(`🚨 구글 AI 응답 에러 발생:\n${errorMsg}`);
       }
     } catch (err) {
-      setAnswer("🚨 네트워크 통신 오류가 발생했습니다.");
+      setAnswer(`🚨 네트워크 통신 에러: ${err.message}`);
     } finally {
       setLoading(false);
     }
