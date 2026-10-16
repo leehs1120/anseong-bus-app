@@ -1,9 +1,8 @@
-
 "use client";
 import { useState } from "react";
 
 // 🔑 1번째 줄: 본인의 구글 API 키
-const GEMINI_API_KEY = "AQ.Ab8RN6KC0RnRgeM1gyOLm8YFk3R9l2Hp_KeCTnEMaDRAuqi8dA";
+const GEMINI_API_KEY = "AQ.Ab8RN6JOWN8GN2RINOgU1UIS2Eo5-fxZb3juosQwZuI5i6oSvg";
 
 const route1150Stops = [
   { id: "1", name: "안성종합버스터미널", type: "기점" },
@@ -31,43 +30,50 @@ export default function Home() {
     setLoading(true);
     setAnswer("");
 
-    try {
-      // gemini-1.5-flash 지원 모델 호출
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY.trim()}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: `당신은 안성 대중교통(특히 1150번 버스: 안성터미널 - 한경대 - 중앙대 - 평택역 노선) 전문 AI 안내원입니다.\n` +
-                          `사용자의 질문에 대해 배차간격(15~20분), 소요시간, 환승 팁 등을 포함해서 친절하고 구체적으로 답변해 주세요.\n\n` +
-                          `사용자 질문: ${question}`
-                  }
-                ]
-              }
-            ]
-          })
+    // 지원되는 최신 모델 목록 순차적 시도 (gemini-2.0-flash -> gemini-1.5-flash-latest)
+    const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash-latest"];
+    let success = false;
+
+    for (const modelName of modelsToTry) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY.trim()}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: `당신은 안성 대중교통(특히 1150번 버스: 안성터미널 - 한경대 - 중앙대 - 평택역 노선) 전문 AI 안내원입니다.\n` +
+                            `사용자의 질문에 대해 배차간격(15~20분), 소요시간, 환승 팁 등을 포함해서 친절하고 구체적으로 답변해 주세요.\n\n` +
+                            `사용자 질문: ${question}`
+                    }
+                  ]
+                }
+              ]
+            })
+          }
+        );
+
+        const data = await res.json();
+
+        if (res.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+          setAnswer(data.candidates[0].content.parts[0].text);
+          success = true;
+          break; // 성공 시 반복문 종료
         }
-      );
-
-      const data = await res.json();
-
-      if (res.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-        setAnswer(data.candidates[0].content.parts[0].text);
-      } else {
-        // 구글 응답 에러를 원문 그대로 출력
-        const errorMsg = data.error?.message || JSON.stringify(data);
-        setAnswer(`🚨 구글 AI 응답 에러 발생:\n${errorMsg}`);
+      } catch (err) {
+        console.error(`Model ${modelName} call failed:`, err);
       }
-    } catch (err) {
-      setAnswer(`🚨 네트워크 통신 에러: ${err.message}`);
-    } finally {
-      setLoading(false);
     }
+
+    if (!success) {
+      setAnswer("🤖 AI 응답 생성에 실패했습니다. API 키의 권한이나 Google Cloud project 설정을 확인해 주세요.");
+    }
+
+    setLoading(false);
   };
 
   return (
